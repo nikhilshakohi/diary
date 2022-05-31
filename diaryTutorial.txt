@@ -1,0 +1,69 @@
+Starting up:
+
+Visual Studio > Open Folder > MyWebsites/Diary
+npx create-react-app diary
+Remove unwanted files like reportWebVitals, test.
+
+
+Installing sources:
+1. Adding Material Design Bootstrap:
+	i) npm install mdb-react-ui-kit.
+	ii) import 'mdb-react-ui-kit/dist/css/mdb.min.css'; is added in index.js file to work out the css.
+	iii) Now components can be added in any other files.
+2. Removed Material Design as thought of using Older login and signup pages using MUI
+	i) npm uninstall mdb-react-ui-kit
+	ii)
+3. Install Firebase:
+	i) Firebase.com > Add new project > diary-mark1 > 
+	   	Web > Project NickName - diary > (Did not select Firebase hosting)
+	ii) In the terminal,
+		npm install firebase 
+		npm install firebase-tools -g
+		firebase login
+		firebase init > added only firestore > (default file names)
+4. Install other necessities:
+	React:
+		i) npm install react-router-dom@6 (for react router)
+	Material UI:
+		i) npm install @mui/material @emotion/react @emotion/styled 
+		ii) npm install @mui/icons-material
+		iii) npm install @mui/lab
+		iv) npm install @material-ui/core
+		v) npm install @material-ui/icons
+5. Run the updates:
+	i) npm run build
+	ii) firebase deploy
+
+
+Got some errors:
+	i) npm install mdb-react-ui-kit
+	ii) npm run build
+	iii) firebase deploy
+
+Working fine..
+Editing other js files..
+
+6. Adding Authentication:
+	i) In Firebase Console > Authentication > Email, Google authentication are enabled
+		In Rules > 
+			Had to change rules of firestore 
+				from: allow read, write: if false;
+				to: 	allow read, write: if true;
+	ii) In Cloud Firestore, added new tables as per requirement
+
+7. Added Moment.js
+	npm install moment react-moment --save
+
+
+8. Hosting in Firebase:
+	firebase login
+	Doin it again (for adding github actions)
+	firebase init
+		1) Selected firestore, Hosting GitHub Actions, Hosting Configure files
+		2) firestore.rules
+		3) firestore.indexes.json
+	firebase deploy
+
+9. Checking in site:
+	npm run build
+	firebase deploy
