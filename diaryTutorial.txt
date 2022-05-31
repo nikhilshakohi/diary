@@ -1,3 +1,5 @@
+My journey while developing this site:
+
 Starting up:
 
 Visual Studio > Open Folder > MyWebsites/Diary
@@ -93,3 +95,8 @@ Did not work in site (opened github status)
 	git push -u origin main
 	firebase deploy
 
+
+13. Found blank screen in site after deployement,
+In firestore.json, Changed (public:"public") to (public:"build")
+
+Finally Work Done!
