@@ -12,17 +12,18 @@ function App() {
 
     const currentUser = useAuth(); //Get status of user from AuthContext
 
-    const { mode } = useCurrentTheme();
+    const { mode } = useCurrentTheme(); //Status or State of current mode
 
     const currentTheme = createTheme({ palette: { mode:mode, } });
     
     return (
         <div>
-            <ThemeProvider theme={currentTheme}>
+            <ThemeProvider theme={currentTheme}> {/*Wrapping this so that all elements can be affected while changing modes*/}
                 <Routes>
                     <Route path="/" element={currentUser.currentUser ? <Home /> : <Login />} />
                     <Route path="/Login" element={currentUser.currentUser ? <Home /> : <Login />} />
                     <Route path="/Home" element={currentUser.currentUser ? <Home /> : <Login />} />
+                    <Route path="*" element={currentUser.currentUser ? <Home /> : <Login />} />
                 </Routes>
             </ThemeProvider>
         </div>

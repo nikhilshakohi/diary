@@ -28,7 +28,7 @@ const Header = () => {
                 <Toolbar variant="regular">
                     {/*App Name*/}
                     <Box sx={{ flexGrow: 1, display: 'flex', }}>
-                        <Typography variant="h5" color="inherit" component="div">Diary</Typography>
+                        <Typography variant="h5" color="inherit" sx={{cursor:'pointer'}} component="div">Diary</Typography>
                     </Box>
                     {/*Menu Bar in desktop*/}
                     <Box sx={{ flexGrow: 1, display: { xs: 'none', md: 'flex' }, justifyContent: 'flex-end' }}>

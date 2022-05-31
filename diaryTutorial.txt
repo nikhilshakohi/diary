@@ -63,7 +63,33 @@ Editing other js files..
 		2) firestore.rules
 		3) firestore.indexes.json
 	firebase deploy
+Did not work in site (opened github status) 
 
 9. Checking in site:
 	npm run build
 	firebase deploy
+Did not work in site (opened github status)
+
+10. Github:
+	git init //will add a new repository
+	git add . //will add a blank file to cache
+	git commit -m "first commit" //Will commit the changes in the cache
+	git branch -M main //will select the branch
+	git remote add origin https://github.com/nikhilshakohi/assist.git //will select the repo
+	git push -u origin main //will push the cache data to main github account
+Did not work in site (opened github status)
+
+11. Re run
+	npm run build
+	firebase deploy
+Did not work in site (opened github status)
+(Because firebase init has refreshed the index.html file... had to copy the index.html file from assist and it was working fine)
+
+12. Re commited code into github as:
+	git init
+	git add . 
+	git commit -m '2nd commit'
+	git branch -M main
+	git push -u origin main
+	firebase deploy
+

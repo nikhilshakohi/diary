@@ -39,8 +39,8 @@ const Home = () => {
     const [ellipsisUsedArray, setEllipsisUsedArray] = useState([]); //Contains contents that are removed from ellipsis styling
     const [menuUsedArray, setMenuUsedArray] = useState([]); //Contains ids of menu opened
     const addContentFormRef = useRef(); //Add Content Form Ref for slide animation
-    const [searchBox, setSearchBox] = useState(false);
-    const [searchInput,setSearchInput] = useState('');
+    const [searchBox, setSearchBox] = useState(false); //Outputs of searched query
+    const [searchInput,setSearchInput] = useState(''); //Input for Search
     
     //Check for user details changes
     useEffect(() => {
