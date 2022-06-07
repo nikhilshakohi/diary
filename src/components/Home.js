@@ -158,14 +158,14 @@ const Home = () => {
     async function editContent(id) {
         try {
             setLoadingBackdrop(true);
+            setEditDialog(false);
+            setAlert({ alertName: 'Content was edited successfully!', alertSeverity: 'info' });
             const updateItem = doc(getFirestore(), "contents", id);
             await updateDoc(updateItem, {
                 contentTitle: editContentArray.contentTitle,
                 contentDetails: editContentArray.contentDetails
             });
             setLoadingBackdrop(false);
-            setEditDialog(false);
-            setAlert({ alertName: 'Content was edited successfully!', alertSeverity: 'info' });
             setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' }) }, 5000);
         } catch (e) {
             setLoadingBackdrop(false);
