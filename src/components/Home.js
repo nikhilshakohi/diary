@@ -166,14 +166,9 @@ const Home = () => {
             setAlert({ alertName: 'Content was edited successfully!', alertSeverity: 'info' });
             const updateItem = doc(getFirestore(), "contents", id);
             await updateDoc(updateItem, {
-<<<<<<< HEAD
-                contentTitle: editContentArray.contentTitle,
-                contentDetails: editContentArray.contentDetails
-=======
                 contentTitle: editContentTitleRef.current.value,
                 contentDate: editContentDateRef.current.value,
                 contentDetails: editContentDetailsRef.current.value
->>>>>>> 235d3b9 (fixes and improvements)
             });
             setLoadingBackdrop(false);
             setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' }) }, 5000);
