@@ -1,21 +1,20 @@
 /*React*/
 import { useEffect, useState, useRef } from 'react';
-/*For time formatting*/
-import Moment from 'react-moment';
 /*Pages*/
 import Header from './Header';
 import '../index.css';
 import {useAuth} from '../auth/AuthContext';
 /*Material*/
-import { TextField, Box, Grid, Container, Button, CssBaseline, Typography, CircularProgress, Backdrop, Alert, Card, CardContent, CardActions, Menu, IconButton, MenuItem, Slide } from '@mui/material';
+import { TextField, Box, Grid, Container, Button, CssBaseline, Typography, CircularProgress, Backdrop, Alert, Card, IconButton, Slide } from '@mui/material';
 import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 import { addDoc, collection, deleteDoc, doc, getDoc, getFirestore, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import MoreVert from '@mui/icons-material/MoreVert';
 import Search from '@mui/icons-material/Search';
 import CancelIcon from '@mui/icons-material/Cancel';
 import EmojiEmotions from '@mui/icons-material/EmojiEmotions';
-import AccessTimeFilled from '@mui/icons-material/AccessTimeFilled';
+import HistoryIcon from '@mui/icons-material/History';
 import { LoadingButton } from '@mui/lab';
+import Content from './Content';
 
 const Home = () => {
 
@@ -48,7 +47,12 @@ const Home = () => {
     const editContentTitleRef = useRef();    //Ref for edit dialog input Title
     const editContentDetailsRef = useRef();    //Ref for edit dialog input Details
     const searchWordRef = useRef(); //To improve speed
-    const [searchedWord, setSearchedWord] = useState("");    //For search results count
+    const [searchedWord, setSearchedWord] = useState("");    // For search results count
+    const [historyArray, setHistoryArray] = useState([]);   // For storing all details of past years of same date
+    const [showHistory, setShowHistory] = useState(false);  // For toggling history div
+    const allStateParams = {loading, searchLoading, anchorElNav, menuUsedArray, MoreVert, showEditContent, ellipsisUsedArray};
+    const allSetStateParams = {setAnchorElNav, setMenuUsedArray, setLoadingBackdrop, setDeleteDialog, setContentID, setEllipsisUsedArray };
+    const allParams = {...allStateParams, ...allSetStateParams};
 
     //Check for user details changes
     useEffect(() => {
@@ -79,6 +83,21 @@ const Home = () => {
         }
     }
     const handleSearchDebounced = searchDebouncer(handleSearch, 500);
+
+    // Get History Details
+    useEffect(() => {
+        let pastContents = [];
+        pastContents = allContentsArray.filter((a)=> {
+            const dateParams = new Date().toISOString().split("T")[0].split("-");
+            const itemParams = a.contentDate.split("-");
+            // Return true if same day, month and not including current year
+            return dateParams[1] === itemParams[1] && dateParams[2] === itemParams[2] && dateParams[0] !== itemParams[0]
+        })
+        setHistoryArray(pastContents);
+        return () => {
+            setHistoryArray([]);
+        };
+    }, [allContentsArray]);
 
     //Filter Searched Results
     async function handleSearch() {
@@ -214,9 +233,13 @@ const Home = () => {
                         </Grid>
                         <Grid sx={{ display: 'flex', alignItems: 'center' }}>
                             {
+                                historyArray.length > 0 &&
+                                <Box><IconButton onClick={() => { setShowHistory(!showHistory); setSearchBox(false); setSearchedWord("") }}><HistoryIcon /></IconButton></Box>
+                            }
+                            {
                                 searchBox ?
                                     <Box><IconButton onClick={() => { setSearchBox(false); }}><CancelIcon /></IconButton></Box> :
-                                    <Box><IconButton onClick={() => { setSearchBox(!searchBox); }}><Search /></IconButton></Box>
+                                    <Box><IconButton onClick={() => { setSearchBox(!searchBox); setSearchedWord(""); setShowHistory(false); }}><Search /></IconButton></Box>
                             }
                         </Grid>
                     </Box>
@@ -242,6 +265,23 @@ const Home = () => {
                             </div>
                         </Slide>
                     }
+                    {
+                        showHistory && !searchBox &&
+                        <Slide in={showHistory} direction="up" container={addContentFormRef.current}>
+                            <div>
+                                <br />
+                                <Typography id="historyTitle" variant="h6">Your past notes on this day..</Typography>
+                                {
+                                     (historyArray.length > 0) &&
+                                     historyArray.map((item) => (
+                                         <Content key={item.id} item={item} allParams={allParams} type="subType" />
+                                     ))
+                                }
+                                <br/>
+                                <Button variant="contained" color="error" onClick={() => {setShowHistory(false); setSearchBox(false); setSearchedWord("")}}>CLOSE</Button>
+                            </div>
+                        </Slide>
+                    }
                 </Card>
                 {/*Search Content*/}
                 <Box>
@@ -249,43 +289,10 @@ const Home = () => {
                     {
                         searchLoading ?
                             searchBox && <CircularProgress /> :
-                            searchBox && 
+                            searchBox && searchedWord !== "" &&
                                 (filteredContentArray.length > 0) &&
                                 filteredContentArray.map((item) => (
-                                    <Slide key={item.id} direction="up" in={!searchLoading}>
-                                        <Card key={item.id} sx={{ bgcolor: 'blue[50]', my: 1, border:"2px solid" }} >
-                                        <CardContent sx={{pb:0,mb:0}}>
-                                            {/*Card Header*/}
-                                            <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                <Grid container alignItems="center" direction="row">
-                                                    <Grid item sx={{ mr: 2 }}>
-                                                        <IconButton><AccessTimeFilled fontSize="large" color="primary"/></IconButton>
-                                                    </Grid>
-                                                    <Grid item>
-                                                        <Box>
-                                                            <Typography variant="h5" sx={{ textTransform: "uppercase" }}>{item.contentTitle}</Typography>
-                                                            <Typography variant="body2"><Moment format="DD-MMM-YYYY (ddd)">{item.contentDate}</Moment></Typography>
-                                                        </Box>
-                                                    </Grid>
-                                                </Grid>
-                                                    <Grid><IconButton key={'menuButton' + item.id} aria-label="more" aria-controls={Boolean(anchorElNav) ? 'long-menu' + item.id : undefined} aria-haspopup="true" aria-expanded={Boolean(anchorElNav) ? 'true' : undefined} onClick={(e) => { if (menuUsedArray.indexOf(item.id) < 0) { setMenuUsedArray(menuUsedArray => [...menuUsedArray, item.id]); setAnchorElNav(e.currentTarget); } else { menuUsedArray.splice(menuUsedArray.indexOf(item.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); } }}><MoreVert /></IconButton></Grid>
-                                            </Box>
-                                            {/*Menu of Edit, Delete of each card*/}
-                                                <Menu key={'menuItemsDiv' + item.id} id={'long-menu' + item.id} anchorEl={menuUsedArray.indexOf(item.id) < 0 ? null : anchorElNav} open={menuUsedArray.indexOf(item.id) < 0 ? false : Boolean(anchorElNav)} onClose={() => { menuUsedArray.splice(menuUsedArray.indexOf(item.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); }} >
-                                                    <MenuItem key={'editMenu' + item.id}><Typography onClick={() => { setLoadingBackdrop(true); showEditContent(item.id); menuUsedArray.splice(menuUsedArray.indexOf(item.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); }}>Edit</Typography></MenuItem>
-                                                    <MenuItem key={'deleteMenu' + item.id}><Typography onClick={() => { setDeleteDialog(true); setContentID(item.id); menuUsedArray.splice(menuUsedArray.indexOf(item.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); } }>Delete</Typography></MenuItem>
-                                            </Menu>
-                                            {/*Card Content*/}
-                                                <br /><Typography className={ellipsisUsedArray.indexOf(item.id) < 0 ? 'ellipsisStyle' : 'noEllipsisStyle'} variant="body1" id={"contentDetailsIDof" + item.id} sx={{ whiteSpace: 'pre-line' }} >{item.contentDetails}</Typography>
-                                        </CardContent>
-                                        <CardActions disableSpacing>
-                                            {/*See More or See Less Buttons*/}
-                                                <Button size="small" onClick={() => { if (ellipsisUsedArray.indexOf(item.id) < 0) { setEllipsisUsedArray(ellipsisUsedArray => [...ellipsisUsedArray, item.id]) } else { ellipsisUsedArray.splice(ellipsisUsedArray.indexOf(item.id), 1); setEllipsisUsedArray(ellipsisUsedArray => [...ellipsisUsedArray, ellipsisUsedArray]); } }}>
-                                                    {(ellipsisUsedArray.indexOf(item.id) < 0) ? 'More' : 'Less' }
-                                            </Button>
-                                        </CardActions>
-                                    </Card>
-                                    </Slide>
+                                    <Content key={item.id} item={item} allParams={allParams} type="subType"/>
                                 ))
                     }
                 </Box>
@@ -295,44 +302,7 @@ const Home = () => {
                         loading ? <CircularProgress /> :
                             (allContentsArray.length > 0) ?
                                 allContentsArray.map((data) => (
-                                    <Slide key={data.id} direction="up" in={!loading}>
-                                        <Card key={data.id} sx={{ bgcolor: 'blue[50]', my: 1 }} >
-                                            <CardContent sx={{ pb: 0, mb: 0 }}>
-                                                {/*Card Header*/}
-                                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                                    <Grid container alignItems="center" direction="row">
-                                                        <Grid item sx={{ mr: 2 }}>
-                                                            <IconButton><AccessTimeFilled fontSize="large" color="primary" /></IconButton>
-                                                        </Grid>
-                                                        <Grid item>
-                                                            <Box>
-                                                                <Typography variant="h5" sx={{ textTransform: "uppercase" }}>{data.contentTitle}</Typography>
-                                                                <Box sx={{display:'inline-flex', flexDirection:'row'}}>
-                                                                    <Typography variant="body2"><Moment format="DD-MMM-YYYY (ddd)">{data.contentDate}</Moment></Typography>
-                                                                </Box>
-                                                            </Box>
-                                                        </Grid>
-                                                    </Grid>
-                                                    <Grid><IconButton key={'menuButton' + data.id} aria-label="more" aria-controls={Boolean(anchorElNav) ? 'long-menu' + data.id : undefined} aria-haspopup="true" aria-expanded={Boolean(anchorElNav) ? 'true' : undefined} onClick={(e) => { if (menuUsedArray.indexOf(data.id) < 0) { setMenuUsedArray(menuUsedArray => [...menuUsedArray, data.id]); setAnchorElNav(e.currentTarget); } else { menuUsedArray.splice(menuUsedArray.indexOf(data.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); } }}><MoreVert /></IconButton></Grid>
-                                                </Box>
-                                                {/*Menu of Edit, Delete of each card*/}
-                                                <Menu key={'menuItemsDiv' + data.id} id={'long-menu' + data.id} anchorEl={menuUsedArray.indexOf(data.id) < 0 ? null : anchorElNav} open={menuUsedArray.indexOf(data.id) < 0 ? false : Boolean(anchorElNav)} onClose={() => { menuUsedArray.splice(menuUsedArray.indexOf(data.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); }} >
-                                                    <MenuItem key={'editMenu' + data.id}><Typography onClick={() => { setLoadingBackdrop(true); showEditContent(data.id); menuUsedArray.splice(menuUsedArray.indexOf(data.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); }}>Edit</Typography></MenuItem>
-                                                    <MenuItem key={'deleteMenu' + data.id}><Typography onClick={() => { setDeleteDialog(true); setContentID(data.id); menuUsedArray.splice(menuUsedArray.indexOf(data.id), 1); setMenuUsedArray(menuUsedArray => [...menuUsedArray, menuUsedArray]); setAnchorElNav(null); }}>Delete</Typography></MenuItem>
-                                                </Menu>
-                                                {/*Card Content*/}
-                                                <br /><Typography className={ellipsisUsedArray.indexOf(data.id) < 0 ? 'ellipsisStyle' : 'noEllipsisStyle'} variant="body1" id={"contentDetailsIDof" + data.id} sx={{ whiteSpace: 'pre-line' }} >{data.contentDetails}</Typography>
-                                            </CardContent>
-                                            <CardActions disableSpacing>
-                                                {/*See More or See Less Buttons*/}
-                                                <Button size="small" onClick={() => { if (ellipsisUsedArray.indexOf(data.id) < 0) { setEllipsisUsedArray(ellipsisUsedArray => [...ellipsisUsedArray, data.id]) } else { ellipsisUsedArray.splice(ellipsisUsedArray.indexOf(data.id), 1); setEllipsisUsedArray(ellipsisUsedArray => [...ellipsisUsedArray, ellipsisUsedArray]); } }}>
-                                                    {(ellipsisUsedArray.indexOf(data.id) < 0) ? 'More' : 'Less'}
-                                                </Button>
-                                                {/*Number of words*/}
-                                                <Typography variant="caption">&nbsp;({data.contentDetails.split(' ').length} words)</Typography>
-                                            </CardActions>
-                                        </Card>
-                                    </Slide>
+                                    <Content key={data.id} item={data} allParams={allParams} type="mainType"/>
                                 )) :
                                 <div>No contents found.. </div>
                     }
