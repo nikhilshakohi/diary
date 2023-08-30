@@ -3,9 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 /*Pages*/
 import Header from './Header';
 import '../index.css';
-import {useAuth} from '../auth/AuthContext';
+import { useAuth } from '../auth/AuthContext';
 /*Material*/
-import { TextField, Box, Grid, Container, Button, CssBaseline, Typography, CircularProgress, Backdrop, Alert, Card, IconButton, Slide } from '@mui/material';
+import { TextField, Box, Grid, Container, Button, CssBaseline, Typography, CircularProgress, Backdrop, Alert, Card, IconButton, Slide, InputAdornment } from '@mui/material';
 import { Dialog, DialogContent, DialogContentText, DialogTitle, DialogActions } from '@mui/material';
 import { addDoc, collection, deleteDoc, doc, getDoc, getFirestore, onSnapshot, orderBy, query, updateDoc, where } from 'firebase/firestore';
 import MoreVert from '@mui/icons-material/MoreVert';
@@ -15,11 +15,13 @@ import EmojiEmotions from '@mui/icons-material/EmojiEmotions';
 import HistoryIcon from '@mui/icons-material/History';
 import { LoadingButton } from '@mui/lab';
 import Content from './Content';
+import { Visibility, VisibilityOff } from '@material-ui/icons';
 
 const Home = () => {
 
     const currentUser = useAuth(); //Get currentUser details
-    const [userDetails, setUserDetails] = useState({ email: '', displayName: '' }); //Set current User details
+    const { logout } = useAuth();
+    const [userDetails, setUserDetails] = useState({ id: '', email: '', displayName: '', pinStatus: '', pin: '' }); //Set current User details
     const [allContentsArray, setAllContentsArray] = useState([]); //For all contents array
     const [showAddContent, setShowAddContent] = useState(false);
     //const [editContentArray, setEditContentArray] = useState({ editContentTitle: '', editContentDate: '', editContentDetails: '' });//for getting data in edit dialog
@@ -29,7 +31,7 @@ const Home = () => {
     const [editDialog, setEditDialog] = useState(false); //For getting edit content Dialog
     const todayDate = new Date().toISOString().substring(0, 10);//Get current Date
     const [addContentErrors, setAddContentErrors] = useState({ contentDate: '', contentTitle: '' }); //For showing errors while adding contents
-    const [loading, setLoading] = useState(true); //For loader
+    const [loading, setLoading] = useState(false); //For loader
     const [searchLoading, setSearchLoading] = useState(false); //For search loader
     const [alert, setAlert] = useState({ alertName: '', alertSeverity: '' }); //Setting alert for events
     const [loadingBackDrop, setLoadingBackdrop] = useState(false);//Full screen loader
@@ -50,31 +52,49 @@ const Home = () => {
     const [searchedWord, setSearchedWord] = useState("");    // For search results count
     const [historyArray, setHistoryArray] = useState([]);   // For storing all details of past years of same date
     const [showHistory, setShowHistory] = useState(false);  // For toggling history div
-    const allStateParams = {loading, searchLoading, anchorElNav, menuUsedArray, MoreVert, showEditContent, ellipsisUsedArray};
-    const allSetStateParams = {setAnchorElNav, setMenuUsedArray, setLoadingBackdrop, setDeleteDialog, setContentID, setEllipsisUsedArray };
-    const allParams = {...allStateParams, ...allSetStateParams};
+    const allStateParams = { loading, searchLoading, anchorElNav, menuUsedArray, MoreVert, showEditContent, ellipsisUsedArray };
+    const allSetStateParams = { setAnchorElNav, setMenuUsedArray, setLoadingBackdrop, setDeleteDialog, setContentID, setEllipsisUsedArray };
+    const allParams = { ...allStateParams, ...allSetStateParams };
+    const [pinInput, setPinInput] = useState({ pinMain: '', pinAlt: '' });    // Input Pin Fields
+    const [pin, setPin] = useState('');               // Pin Input Errors
+    const [pinError, setPinError] = useState('');               // Pin Input Errors
+    const [showPin, setShowPin] = useState({ main: false, alt: false, loading: false });      // Pin Toggle
+    const [resettingPin, setResettingPin] = useState(false);
+    const PIN_KEY = process.env.REACT_APP_PIN_ENCRYPTION_KEY;
+    const PIN_STRING = process.env.REACT_APP_SECRET_STRING;
 
     //Check for user details changes
     useEffect(() => {
-        setUserDetails({ email: currentUser.currentUser.email, displayName: currentUser.currentUser.displayName });
+        const authDetails = { email: currentUser.currentUser.email, displayName: currentUser.currentUser.displayName };
+        
+        const checkIsPinCreatedQuery = query(collection(getFirestore(), "users"), where("email", "==", currentUser.currentUser.email));
+        onSnapshot(checkIsPinCreatedQuery, (snapshot) => {
+            const pinDetails = snapshot.docs.map((doc) => ({ id: doc.id,email: doc.data().email, name: doc.data().name, pinStatus: doc.data().pinStatus ?? '', pin: doc.data().pin ?? '', }));
+            setUserDetails({ ...authDetails, ...pinDetails[0] });
+            setLoading(false);
+        });
         return () => setUserDetails([]); //Cleanup function
     }, [currentUser.currentUser]);
 
     //Check if content data changes
     useEffect(() => {
-        //all contents query
-        const allContentQuery = query(collection(getFirestore(), "contents"), where("email", "==", currentUser.currentUser.email), orderBy("contentDate","desc"));
-        onSnapshot(allContentQuery, (snapshot) => {
-            setAllContentsArray(snapshot.docs.map((doc) => ({ id: doc.id, contentDate: doc.data().contentDate, contentTitle: doc.data().contentTitle, contentDetails: doc.data().contentDetails, })));
-            setLoading(false);
-        });
+        console.log(userDetails);
+        if (pin) {
+            setLoading(true);
+            //all contents query
+            const allContentQuery = query(collection(getFirestore(), "contents"), where("email", "==", currentUser.currentUser.email), orderBy("contentDate", "desc"));
+            onSnapshot(allContentQuery, (snapshot) => {
+                setAllContentsArray(snapshot.docs.map((doc) => ({ id: doc.id, contentDate: doc.data().contentDate, contentTitle: doc.data().contentTitle, contentDetails: doc.data().contentDetails, })));
+                setLoading(false);
+            });
+        }
         return setAllContentsArray([]); //Cleanup function
-    }, [currentUser.currentUser.email]);
+    }, [currentUser.currentUser.email, userDetails, pin]);
 
     //Optimized Search using debounce
     const searchDebouncer = (func, delay) => {
         let timer;  //Declaring a timer for maintaining and clearing onchange
-        return function() {
+        return function () {
             const context = this;
             clearTimeout(timer);
             timer = setTimeout(() => {
@@ -87,7 +107,7 @@ const Home = () => {
     // Get History Details
     useEffect(() => {
         let pastContents = [];
-        pastContents = allContentsArray.filter((a)=> {
+        pastContents = allContentsArray.filter((a) => {
             const dateParams = new Date().toISOString().split("T")[0].split("-");
             const itemParams = a.contentDate.split("-");
             // Return true if same day, month and not including current year
@@ -126,7 +146,7 @@ const Home = () => {
         } else if (cTitle === '') {
             setAddContentErrors({ contentTitle: 'How would you call this day?', contentDate: '', contentDetails: '' });
             contentTitleRef.current.focus();
-        }else {
+        } else {
             addContentInFirestoreFn(cTitle, cDate, cDetails);
             document.getElementById("contentDetails").value = '';
             contentTitleRef.current.value = ""; contentDetailsRef.current.value = ""; //Clearing value
@@ -141,10 +161,10 @@ const Home = () => {
             setLoadingBackdrop(false);
             setShowAddContent(false);
             setAlert({ alertName: 'Content Added Successfully!', alertSeverity: 'success' });
-            setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' })},5000);
+            setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' }) }, 5000);
         } catch (e) {
             setLoadingBackdrop(false);
-            setAlert({ alertName: 'Something went wrong! Error: '+e, alertSeverity: 'error' });
+            setAlert({ alertName: 'Something went wrong! Error: ' + e, alertSeverity: 'error' });
             setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' }) }, 10000);
         }
     }
@@ -215,7 +235,76 @@ const Home = () => {
         }
     }
 
-    return (  
+    // Input PIN onChange method
+    const updatePin = (e) => {
+        if (!isNaN(e.target.value))
+            setPinInput({ ...pinInput, [e.target.name]: e.target.value });
+    }
+    
+    // Encrypt Method
+    const customEncrypt = (input, key, string) => {
+        let finalEncString = '';
+        for (let i = 0; i < 6; i++) {
+            const num = input[i];
+            const finalNum_digA = num + key + i;
+            const finalNum_digB = num + key + i*2 + 4;
+            const finalNum_digC = num + key + i*3 + 9;
+            finalEncString += string[finalNum_digA % 29] ?? 'x';
+            finalEncString += string[finalNum_digB % 29] ?? "x";
+            finalEncString += string[finalNum_digC % 29] ?? "x";
+        }
+        return finalEncString;
+    }
+
+    // Check Pin from DB
+    const checkPin = async () => {
+        try {
+            setShowPin({ ...showPin, loading: true });
+            if (userDetails.pinStatus !== 'GEN') { 
+                // New PIN to be created
+                if (pinInput.pinMain === pinInput.pinAlt) {
+                    setPinError("");
+
+                    const encodedPin = customEncrypt(pinInput.pinMain, PIN_KEY, PIN_STRING);
+                    
+                    // Add PIN to Database
+                    const updateItem = doc(getFirestore(), "users", userDetails.id);
+                    await updateDoc(updateItem, { pinStatus: 'GEN', pin: encodedPin });
+                    setShowPin({ ...showPin, loading: false });
+                } else {
+                    setPinError("PIN and confirm PIN are not the same!");
+                    setShowPin({ ...showPin, loading: false });
+                }
+            } else {
+                // Check PIN from Database
+                const pinFromDB = userDetails.pin;
+
+                const encodedPin = customEncrypt(pinInput.pinMain, PIN_KEY, PIN_STRING);
+
+                if (pinFromDB === encodedPin) 
+                    setPin(pinInput.pinMain);
+                else setPinError("PIN is incorrect!");
+            }
+        } catch (e) {
+            console.log('Something went wrong! Details: ', e);
+            setPinError("Something went wrong!");
+            setShowPin({ ...showPin, loading: false });
+        }
+    }
+    
+    // Forgot Pin
+    const forgotPin = async () => {
+        try {
+            // Reset PIN to empty in Database
+            const updateItem = doc(getFirestore(), "users", userDetails.id);
+            await updateDoc(updateItem, { pinStatus: "", pin: "" });
+            await logout();
+        } catch (e) {
+            console.log("Something went wrong! Details: ", e);  
+        }
+    }
+
+    return (
         <div>
             <Header />
             {/*Backdrop full screen loader*/}
@@ -224,6 +313,60 @@ const Home = () => {
             </Backdrop>
             <CssBaseline />
             <Container>
+                {/*Pin Dialog*/}
+                <Dialog open={!pin} onClose={() => setEditDialog(false)} fullWidth maxWidth='sm' >
+                    {userDetails.pinStatus === '' ? <DialogTitle>Create a new PIN!</DialogTitle> : <DialogTitle>Confirm it's you!</DialogTitle>}
+                    <DialogContent>
+                        {userDetails.pinStatus === '' ?
+                            <DialogContentText>
+                                PIN not found for this account.. <br />Create a new PIN to secure your Diary:
+                            </DialogContentText> : 
+                            <DialogContentText>
+                                Enter your PIN to load your content securely:<br />
+                            </DialogContentText>
+                        }
+                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton aria-label="toggle pin visibility" onClick={() => { setShowPin({...showPin, main: !showPin.main}) }} onMouseDown={() => { setShowPin({...showPin, main: !showPin.main}) }}>
+                                            {showPin.main ? <Visibility /> : <VisibilityOff />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                            inputProps={{inputMode: 'numeric', maxLength: 6}}
+                        />
+                        {userDetails.pinStatus === '' &&
+                            // <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} onChange={updatePin} type="password"
+                            //     inputProps={{inputMode: 'numeric', maxLength: 6}}
+                            // />
+                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "password"}
+                            InputProps={{
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <IconButton aria-label="toggle pin visibility" onClick={() => { setShowPin({...showPin, alt: !showPin.alt}) }} onMouseDown={() => { setShowPin({...showPin, alt: !showPin}) }}>
+                                            {showPin.alt ? <Visibility /> : <VisibilityOff />}
+                                        </IconButton>
+                                    </InputAdornment>
+                                )
+                            }}
+                            inputProps={{inputMode: 'numeric', maxLength: 6}}
+                        />
+                        }
+                    </DialogContent>
+                    <DialogActions sx={{ pb: 2 }}>
+                        <Button variant="contained" color="success" disabled={ userDetails.pinStatus !== 'GEN' ? !(pinInput?.pinMain && pinInput?.pinAlt) : !pinInput.pinMain } onClick={() => checkPin()}>CONFIRM</Button>
+                        <Button variant="outlined" color="error" onClick={() => setResettingPin(true)}>FORGET PIN</Button>
+                    </DialogActions>
+                    {resettingPin && <DialogContent>
+                        <DialogContentText>
+                            To Reset your PIN, you need to LOGOUT and LOGIN through here:
+                        </DialogContentText><br/>
+                        <Button variant="contained" color="error" onClick={() => forgotPin()}>RESET</Button>{" "}
+                        <Button variant="outlined" color="secondary" onClick={() => setResettingPin(false)}>CANCEL</Button>
+                    </DialogContent>}
+                </Dialog>
                 {/*Add Content*/}
                 <Card raised={true} sx={{ bgcolor: 'teal[50]', mt: 2, px: 2, py: 3 }} ref={addContentFormRef}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
@@ -257,10 +400,10 @@ const Home = () => {
                     {
                         !searchBox && showAddContent &&
                         <Slide in={showAddContent} direction="left" container={addContentFormRef.current}>
-                        <div>
-                            <TextField id="contentDate" defaultValue={todayDate} inputRef={contentDateRef} required type="date" label="Date" InputLabelProps={{ shrink: true }} /*value={todayDate} onChange={handleChange}*/ error={addContentErrors.contentDate !== ''} helperText={addContentErrors.contentDate === '' ? '' : addContentErrors.contentDate} />
-                            <TextField id="contentTitle" inputRef={contentTitleRef} required label="Title for this day" /*value={content.contentTitle} onChange={handleChange}*/ error={addContentErrors.contentTitle !== ''} helperText={addContentErrors.contentTitle === '' ? '' : addContentErrors.contentTitle} /><br/><br/>
-                            <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }}>ADD</Button>
+                            <div>
+                                <TextField id="contentDate" defaultValue={todayDate} inputRef={contentDateRef} required type="date" label="Date" InputLabelProps={{ shrink: true }} /*value={todayDate} onChange={handleChange}*/ error={addContentErrors.contentDate !== ''} helperText={addContentErrors.contentDate === '' ? '' : addContentErrors.contentDate} />
+                                <TextField id="contentTitle" inputRef={contentTitleRef} required label="Title for this day" /*value={content.contentTitle} onChange={handleChange}*/ error={addContentErrors.contentTitle !== ''} helperText={addContentErrors.contentTitle === '' ? '' : addContentErrors.contentTitle} /><br /><br />
+                                <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }}>ADD</Button>
                                 <Button variant="outlined" color="error" onClick={() => setShowAddContent(false)}>CLOSE</Button>
                             </div>
                         </Slide>
@@ -272,13 +415,13 @@ const Home = () => {
                                 <br />
                                 <Typography id="historyTitle" variant="h6">Your past notes on this day..</Typography>
                                 {
-                                     (historyArray.length > 0) &&
-                                     historyArray.map((item) => (
-                                         <Content key={item.id} item={item} allParams={allParams} type="subType" />
-                                     ))
+                                    (historyArray.length > 0) &&
+                                    historyArray.map((item) => (
+                                        <Content key={item.id} item={item} allParams={allParams} type="subType" />
+                                    ))
                                 }
-                                <br/>
-                                <Button variant="contained" color="error" onClick={() => {setShowHistory(false); setSearchBox(false); setSearchedWord("")}}>CLOSE</Button>
+                                <br />
+                                <Button variant="contained" color="error" onClick={() => { setShowHistory(false); setSearchBox(false); setSearchedWord("") }}>CLOSE</Button>
                             </div>
                         </Slide>
                     }
@@ -290,10 +433,10 @@ const Home = () => {
                         searchLoading ?
                             searchBox && <CircularProgress /> :
                             searchBox && searchedWord !== "" &&
-                                (filteredContentArray.length > 0) &&
-                                filteredContentArray.map((item) => (
-                                    <Content key={item.id} item={item} allParams={allParams} type="subType"/>
-                                ))
+                            (filteredContentArray.length > 0) &&
+                            filteredContentArray.map((item) => (
+                                <Content key={item.id} item={item} allParams={allParams} type="subType" />
+                            ))
                     }
                 </Box>
                 {/*Show Content*/}
@@ -302,7 +445,7 @@ const Home = () => {
                         loading ? <CircularProgress /> :
                             (allContentsArray.length > 0) ?
                                 allContentsArray.map((data) => (
-                                    <Content key={data.id} item={data} allParams={allParams} type="mainType"/>
+                                    <Content key={data.id} item={data} allParams={allParams} type="mainType" />
                                 )) :
                                 <div>No contents found.. </div>
                     }
@@ -331,7 +474,7 @@ const Home = () => {
                     <DialogActions sx={{ pb: 2 }}>
                         {loadingBackDrop ?
                             <LoadingButton loading={true} variant="contained" >DELETE</LoadingButton> :
-                            ( contentID !== null && <Button variant="contained" color="error" onClick={() => deleteContent(contentID)}>Delete</Button>)
+                            (contentID !== null && <Button variant="contained" color="error" onClick={() => deleteContent(contentID)}>Delete</Button>)
                         }
                         <Button variant="outlined" onClick={() => setDeleteDialog(false)}>Cancel </Button>
                     </DialogActions>
