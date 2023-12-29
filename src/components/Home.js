@@ -111,7 +111,7 @@ const Home = () => {
             const dateParams = new Date().toISOString().split("T")[0].split("-");
             const itemParams = a.contentDate.split("-");
             // Return true if same day, month and not including current year
-            return dateParams[1] === itemParams[1] && dateParams[2] === itemParams[2] && dateParams[0] !== itemParams[0]
+            return dateParams[2] === itemParams[2]
         })
         setHistoryArray(pastContents);
         return () => {
