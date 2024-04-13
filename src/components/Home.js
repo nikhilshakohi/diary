@@ -56,6 +56,7 @@ const Home = () => {
     const allSetStateParams = { setAnchorElNav, setMenuUsedArray, setLoadingBackdrop, setDeleteDialog, setContentID, setEllipsisUsedArray };
     const allParams = { ...allStateParams, ...allSetStateParams };
     const [pinInput, setPinInput] = useState({ pinMain: '', pinAlt: '' });    // Input Pin Fields
+    const pinMainRef = useRef();
     const [pin, setPin] = useState('');               // Pin Input Errors
     const [pinError, setPinError] = useState('');               // Pin Input Errors
     const [showPin, setShowPin] = useState({ main: false, alt: false, loading: false });      // Pin Toggle
@@ -237,7 +238,12 @@ const Home = () => {
 
     // Input PIN onChange method
     const updatePin = (e) => {
-        if (!isNaN(e.target.value))
+        if (e.target.name === "pinMain") {
+            if (e.target.value.length === 6 && userDetails.pinStatus !== "") { 
+                checkPin();
+            }
+        }
+          if (!isNaN(e.target.value))
             setPinInput({ ...pinInput, [e.target.name]: e.target.value });
     }
     
@@ -258,14 +264,15 @@ const Home = () => {
 
     // Check Pin from DB
     const checkPin = async () => {
+        const myPin = pinMainRef.current.value;
         try {
             setShowPin({ ...showPin, loading: true });
             if (userDetails.pinStatus !== 'GEN') { 
                 // New PIN to be created
-                if (pinInput.pinMain === pinInput.pinAlt) {
+                if (myPin === pinInput.pinAlt) {
                     setPinError("");
 
-                    const encodedPin = customEncrypt(pinInput.pinMain, PIN_KEY, PIN_STRING);
+                    const encodedPin = customEncrypt(myPin, PIN_KEY, PIN_STRING);
                     
                     // Add PIN to Database
                     const updateItem = doc(getFirestore(), "users", userDetails.id);
@@ -279,10 +286,10 @@ const Home = () => {
                 // Check PIN from Database
                 const pinFromDB = userDetails.pin;
 
-                const encodedPin = customEncrypt(pinInput.pinMain, PIN_KEY, PIN_STRING);
+                const encodedPin = customEncrypt(myPin, PIN_KEY, PIN_STRING);
 
                 if (pinFromDB === encodedPin) 
-                    setPin(pinInput.pinMain);
+                    setPin(myPin);
                 else setPinError("PIN is incorrect!");
             }
         } catch (e) {
@@ -325,7 +332,7 @@ const Home = () => {
                                 Enter your PIN to load your content securely:<br />
                             </DialogContentText>
                         }
-                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"}
+                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -341,7 +348,7 @@ const Home = () => {
                             // <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} onChange={updatePin} type="password"
                             //     inputProps={{inputMode: 'numeric', maxLength: 6}}
                             // />
-                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "password"}
+                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="new-password" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "password"}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
