@@ -332,7 +332,7 @@ const Home = () => {
                                 Enter your PIN to load your content securely:<br />
                             </DialogContentText>
                         }
-                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"}
+                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"} autoFocus="true"
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
