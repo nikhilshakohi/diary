@@ -249,11 +249,11 @@ const Home = () => {
 
     // Input PIN onChange method
     const updatePin = (e) => {
-        if (e.target.name === "pinMain") {
-            if (e.target.value.length === 6 && userDetails.pinStatus !== "") { 
-                checkPin();
-            }
-        }
+        // if (e.target.name === "pinMain") {
+        //     if (e.target.value.length === 6 && userDetails.pinStatus !== "") { 
+        //         checkPin();
+        //     }
+        // }
           if (!isNaN(e.target.value))
             setPinInput({ ...pinInput, [e.target.name]: e.target.value });
     }
