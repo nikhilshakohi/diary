@@ -51,6 +51,8 @@ const Home = () => {
     const searchWordRef = useRef(); //To improve speed
     const [searchedWord, setSearchedWord] = useState("");    // For search results count
     const [historyArray, setHistoryArray] = useState([]);   // For storing all details of past years of same date
+    const [historyEachDayArray, setHistoryEachDayArray] = useState([]);   // For storing all details of past years of same date of all months
+    const [showBox, setShowBox] = useState({yearWise: false, each: true})
     const [showHistory, setShowHistory] = useState(false);  // For toggling history div
     const allStateParams = { loading, searchLoading, anchorElNav, menuUsedArray, MoreVert, showEditContent, ellipsisUsedArray };
     const allSetStateParams = { setAnchorElNav, setMenuUsedArray, setLoadingBackdrop, setDeleteDialog, setContentID, setEllipsisUsedArray };
@@ -112,11 +114,20 @@ const Home = () => {
             const dateParams = new Date().toISOString().split("T")[0].split("-");
             const itemParams = a.contentDate.split("-");
             // Return true if same day, month and not including current year
+            return dateParams[1] === itemParams[1] && dateParams[2] === itemParams[2] && dateParams[0] !== itemParams[0]
+        })
+        let pastEachContents = [];
+        pastEachContents = allContentsArray.filter((a) => {
+            const dateParams = new Date().toISOString().split("T")[0].split("-");
+            const itemParams = a.contentDate.split("-");
+            // Return true if same day, month and not including current year
             return dateParams[2] === itemParams[2]
         })
+        setHistoryEachDayArray(pastEachContents);
         setHistoryArray(pastContents);
         return () => {
             setHistoryArray([]);
+            setHistoryEachDayArray([]);
         };
     }, [allContentsArray]);
 
@@ -383,7 +394,7 @@ const Home = () => {
                         </Grid>
                         <Grid sx={{ display: 'flex', alignItems: 'center' }}>
                             {
-                                historyArray.length > 0 &&
+                                (historyArray.length > 0 || historyEachDayArray.length > 0) &&
                                 <Box><IconButton onClick={() => { setShowHistory(!showHistory); setSearchBox(false); setSearchedWord("") }}><HistoryIcon /></IconButton></Box>
                             }
                             {
@@ -419,13 +430,31 @@ const Home = () => {
                         showHistory && !searchBox &&
                         <Slide in={showHistory} direction="up" container={addContentFormRef.current}>
                             <div>
-                                <br />
-                                <Typography id="historyTitle" variant="h6">Your past notes on this day..</Typography>
                                 {
                                     (historyArray.length > 0) &&
-                                    historyArray.map((item) => (
-                                        <Content key={item.id} item={item} allParams={allParams} type="subType" />
-                                    ))
+                                    <>
+                                        <br />
+                                        <div display="flex">
+                                            <div><Typography id="historyTitle" variant="h6">Your past notes on this day on previous years..</Typography></div>
+                                            <Button variant='contained' color='info' onClick={(prev) => setShowBox({ ...prev, yearWise: !showBox.yearWise })}>{showBox.yearWise ? 'HIDE' : 'SHOW'}</Button>
+                                        </div>
+                                        {showBox.yearWise && historyArray.map((item) => (
+                                            <Content key={item.id} item={item} allParams={allParams} type="subType" />
+                                        ))}
+                                    </>
+                                }
+                                {
+                                    (historyEachDayArray.length > 0) &&
+                                    <>
+                                        <br />
+                                        <div display="flex">
+                                            <div><Typography id="historyTitle" variant="h6">Your past notes on this day on previous months..</Typography></div>
+                                            <Button variant='contained' color='info' onClick={(prev)=>setShowBox({...prev, each: !showBox.each})}>{showBox.each ? 'HIDE' : 'SHOW'}</Button>
+                                        </div>
+                                        {showBox.each && historyEachDayArray.map((item) => (
+                                            <Content key={item.id} item={item} allParams={allParams} type="subType" />
+                                        ))}
+                                    </>
                                 }
                                 <br />
                                 <Button variant="contained" color="error" onClick={() => { setShowHistory(false); setSearchBox(false); setSearchedWord("") }}>CLOSE</Button>
