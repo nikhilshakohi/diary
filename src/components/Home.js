@@ -31,7 +31,7 @@ const Home = () => {
     const [editDialog, setEditDialog] = useState(false); //For getting edit content Dialog
     const todayDate = new Date().toISOString().substring(0, 10);//Get current Date
     const [addContentErrors, setAddContentErrors] = useState({ contentDate: '', contentTitle: '' }); //For showing errors while adding contents
-    const [loading, setLoading] = useState(false); //For loader
+    const [loading, setLoading] = useState(true); //For loader
     const [searchLoading, setSearchLoading] = useState(false); //For search loader
     const [alert, setAlert] = useState({ alertName: '', alertSeverity: '' }); //Setting alert for events
     const [loadingBackDrop, setLoadingBackdrop] = useState(false);//Full screen loader
@@ -81,7 +81,6 @@ const Home = () => {
 
     //Check if content data changes
     useEffect(() => {
-        console.log(userDetails);
         if (pin) {
             setLoading(true);
             //all contents query
@@ -337,7 +336,10 @@ const Home = () => {
                     <DialogContent>
                         {userDetails.pinStatus === '' ?
                             <DialogContentText>
-                                PIN not found for this account.. <br />Create a new PIN to secure your Diary:
+                                <DialogContentText>
+                                    {loading ? "Initializing security protocols..." : "PIN not found for this account. Create a new PIN to secure your Diary."}
+                                    {loading && <CircularProgress size={24} sx={{ verticalAlign: 'middle', marginLeft: '8px' }} />}
+                                </DialogContentText>
                             </DialogContentText> : 
                             <DialogContentText>
                                 Enter your PIN to load your content securely:<br />
