@@ -30,7 +30,7 @@ const Home = () => {
     const [deleteDialog, setDeleteDialog] = useState(false); //For getting delete content Dialog
     const [editDialog, setEditDialog] = useState(false); //For getting edit content Dialog
     const todayDate = new Date().toISOString().substring(0, 10);//Get current Date
-    const [addContentErrors, setAddContentErrors] = useState({ contentDate: '', contentTitle: '' }); //For showing errors while adding contents
+    const [addContentErrors, setAddContentErrors] = useState({ contentDate: '', contentTitle: '', contentDetails: '' }); //For showing errors while adding contents
     const [loading, setLoading] = useState(true); //For loader
     const [searchLoading, setSearchLoading] = useState(false); //For search loader
     const [alert, setAlert] = useState({ alertName: '', alertSeverity: '' }); //Setting alert for events
@@ -63,6 +63,7 @@ const Home = () => {
     const [pinError, setPinError] = useState('');               // Pin Input Errors
     const [showPin, setShowPin] = useState({ main: false, alt: false, loading: false });      // Pin Toggle
     const [resettingPin, setResettingPin] = useState(false);
+    const [generatedContent, setGeneratedContent] = useState('');
     const PIN_KEY = process.env.REACT_APP_PIN_ENCRYPTION_KEY;
     const PIN_STRING = process.env.REACT_APP_SECRET_STRING;
 
@@ -163,6 +164,47 @@ const Home = () => {
             contentTitleRef.current.value = ""; contentDetailsRef.current.value = ""; //Clearing value
         }
     }
+
+    // Generate Title
+    const generateTitle = async (event) => {
+        event.preventDefault();
+        const cDetails = contentDetailsRef.current.value;
+        if (cDetails === '') { 
+            setAddContentErrors((prev) => ({ ...prev, contentDetails: 'Please enter details to generate a text' }));
+            contentDetailsRef.current.focus();
+            return;
+        }
+        const apiKey = process.env.REACT_APP_GROQ_API_KEY;
+        try {
+            const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${apiKey}`,
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    model: "llama3-70b-8192",
+                    messages: [
+                        {
+                            role: "system",
+                            content: "Generate 3 short, creative, and context-aware titles for the given diary entry. Focus on the most memorable or interesting event of the day, such as 'Temple Visit', 'Lazy Sunday', or 'Friends Hangout'. The titles should be:\n\n- Under 7 words\n- Concise and relevant\n- Varied in tone (e.g., casual, reflective, fun)\n\nReturn only the titles, separated by line breaks."
+                        },                          
+                        { 
+                            role: "user", 
+                            content: cDetails 
+                        },
+                    ],
+                }),
+            });
+            const data = await response.json();
+            const title = data?.choices?.[0]?.message?.content || "No title generated";
+            setGeneratedContent(title);
+        } catch (e) {
+            console.error("Error generating title:", e);
+            setAlert({ alertName: 'Something went wrong! Error: ' + e, alertSeverity: 'error' });
+            setTimeout(() => { setAlert({ alertName: '', alertSeverity: '' }) }, 10000);
+        }
+    };    
 
     //Add Content to Firestore
     async function addContentInFirestoreFn(contentTitle, contentDate, contentDetails) {
@@ -416,13 +458,23 @@ const Home = () => {
                         }
                     </Box>
                     {alert.alertName && <Alert severity={alert.alertSeverity} onClose={() => setAlert([])}>{alert.alertName}</Alert>}
-                    {!searchBox && <TextField id="contentDetails" inputRef={contentDetailsRef} label="How was today?" multiline minRows={2} maxRows={7} /*value={content.contentDetails}*/ onChange={() => toggleAddContentForm(true)} fullWidth margin="normal" InputLabelProps={{ shrink: showAddContent }} onClick={() => toggleAddContentForm(true)} />}
+                    {!searchBox && <TextField id="contentDetails" inputRef={contentDetailsRef} label="How was today?" multiline minRows={2} maxRows={7} /*value={content.contentDetails}*/ onChange={() => toggleAddContentForm(true)} fullWidth margin="normal" InputLabelProps={{ shrink: showAddContent }} onClick={() => toggleAddContentForm(true)} error={addContentErrors.contentDetails !== ''} helperText={addContentErrors.contentDetails === '' ? '' : addContentErrors.contentDetails} />}
                     {
                         !searchBox && showAddContent &&
                         <Slide in={showAddContent} direction="left" container={addContentFormRef.current}>
                             <div>
                                 <TextField id="contentDate" defaultValue={todayDate} inputRef={contentDateRef} required type="date" label="Date" InputLabelProps={{ shrink: true }} /*value={todayDate} onChange={handleChange}*/ error={addContentErrors.contentDate !== ''} helperText={addContentErrors.contentDate === '' ? '' : addContentErrors.contentDate} />
-                                <TextField id="contentTitle" inputRef={contentTitleRef} required label="Title for this day" /*value={content.contentTitle} onChange={handleChange}*/ error={addContentErrors.contentTitle !== ''} helperText={addContentErrors.contentTitle === '' ? '' : addContentErrors.contentTitle} /><br /><br />
+                                <TextField id="contentTitle" inputRef={contentTitleRef} required label="Title for this day" /*value={content.contentTitle} onChange={handleChange}*/ error={addContentErrors.contentTitle !== ''} helperText={addContentErrors.contentTitle === '' ? '' : addContentErrors.contentTitle} />
+                                <Button
+                                    variant="contained"
+                                    sx={{ mr: 1, display: 'inline-block', m: '10px' }}
+                                    onClick={generateTitle}
+                                    disabled={contentDetailsRef?.current?.value}
+                                >
+                                    Generate
+                                </Button>
+                                <br />
+                                <pre>{generatedContent}</pre><br />
                                 <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }}>ADD</Button>
                                 <Button variant="outlined" color="error" onClick={() => setShowAddContent(false)}>CLOSE</Button>
                             </div>
