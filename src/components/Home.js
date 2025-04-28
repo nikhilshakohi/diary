@@ -315,7 +315,8 @@ const Home = () => {
     }
 
     // Check Pin from DB
-    const checkPin = async () => {
+    const checkPin = async (e) => {
+        e.preventDefault();
         const myPin = pinMainRef.current.value;
         try {
             setShowPin({ ...showPin, loading: true });
