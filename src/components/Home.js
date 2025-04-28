@@ -419,7 +419,7 @@ const Home = () => {
                         }
                     </DialogContent>
                     <DialogActions sx={{ pb: 2 }}>
-                        <Button variant="contained" color="success" disabled={ userDetails.pinStatus !== 'GEN' ? !(pinInput?.pinMain && pinInput?.pinAlt) : !pinInput.pinMain } onClick={() => checkPin()}>CONFIRM</Button>
+                        <Button variant="contained" color="success" disabled={ userDetails.pinStatus !== 'GEN' ? !(pinInput?.pinMain && pinInput?.pinAlt) : !pinInput.pinMain } onClick={(e) => checkPin(e)}>CONFIRM</Button>
                         <Button variant="outlined" color="error" onClick={() => setResettingPin(true)}>FORGET PIN</Button>
                     </DialogActions>
                     {resettingPin && <DialogContent>
