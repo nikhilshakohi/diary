@@ -419,15 +419,15 @@ const Home = () => {
                         }
                     </DialogContent>
                     <DialogActions sx={{ pb: 2 }}>
-                        <Button variant="contained" color="success" disabled={ userDetails.pinStatus !== 'GEN' ? !(pinInput?.pinMain && pinInput?.pinAlt) : !pinInput.pinMain } onClick={(e) => checkPin(e)}>CONFIRM</Button>
-                        <Button variant="outlined" color="error" onClick={() => setResettingPin(true)}>FORGET PIN</Button>
+                        <Button type="button" variant="contained" color="success" disabled={ userDetails.pinStatus !== 'GEN' ? !(pinInput?.pinMain && pinInput?.pinAlt) : !pinInput.pinMain } onClick={(e) => {e.preventDefault(); checkPin(e);}}>CONFIRM</Button>
+                        <Button type="button" variant="outlined" color="error" onClick={(e) => {e.preventDefault(); setResettingPin(true);}}>FORGET PIN</Button>
                     </DialogActions>
                     {resettingPin && <DialogContent>
                         <DialogContentText>
                             To Reset your PIN, you need to LOGOUT and LOGIN through here:
                         </DialogContentText><br/>
-                        <Button variant="contained" color="error" onClick={() => forgotPin()}>RESET</Button>{" "}
-                        <Button variant="outlined" color="secondary" onClick={() => setResettingPin(false)}>CANCEL</Button>
+                        <Button type="button" variant="contained" color="error" onClick={(e) => {e.preventDefault(); forgotPin()}}>RESET</Button>{" "}
+                        <Button type="button" variant="outlined" color="secondary" onClick={(e) => {e.preventDefault(); setResettingPin(false);}}>CANCEL</Button>
                     </DialogContent>}
                 </Dialog>
                 {/*Add Content*/}
