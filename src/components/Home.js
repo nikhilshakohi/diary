@@ -64,6 +64,7 @@ const Home = () => {
     const [showPin, setShowPin] = useState({ main: false, alt: false, loading: false });      // Pin Toggle
     const [resettingPin, setResettingPin] = useState(false);
     const [generatedContent, setGeneratedContent] = useState('');
+    const [showPinDialog, setShowPinDialog] = useState(!pin);
     const PIN_KEY = process.env.REACT_APP_PIN_ENCRYPTION_KEY;
     const PIN_STRING = process.env.REACT_APP_SECRET_STRING;
 
@@ -374,7 +375,7 @@ const Home = () => {
             <CssBaseline />
             <Container>
                 {/*Pin Dialog*/}
-                <Dialog open={!pin} onClose={() => setEditDialog(false)} fullWidth maxWidth='sm' >
+                <Dialog open={showPinDialog} onClose={() => {setShowPinDialog(false);setEditDialog(false);}} fullWidth maxWidth='sm' >
                     {userDetails.pinStatus === '' ? <DialogTitle>Create a new PIN!</DialogTitle> : <DialogTitle>Confirm it's you!</DialogTitle>}
                     <DialogContent>
                         {userDetails.pinStatus === '' ?
@@ -388,7 +389,7 @@ const Home = () => {
                                 Enter your PIN to load your content securely:<br />
                             </DialogContentText>
                         }
-                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"} autoFocus="true"
+                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "text"} autoFocus="true"
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -404,7 +405,7 @@ const Home = () => {
                             // <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} onChange={updatePin} type="password"
                             //     inputProps={{inputMode: 'numeric', maxLength: 6}}
                             // />
-                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="new-password" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "password"}
+                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="new-password" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "text"}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -470,13 +471,13 @@ const Home = () => {
                                     variant="contained"
                                     sx={{ mr: 1, display: 'inline-block', m: '10px' }}
                                     onClick={generateTitle}
-                                    disabled={contentDetailsRef?.current?.value}
+                                    // disabled={contentDetailsRef?.current?.value}
                                 >
                                     Generate
                                 </Button>
                                 <br />
                                 <pre>{generatedContent}</pre><br />
-                                <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }}>ADD</Button>
+                                <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }} disabled={!pin}>ADD</Button>
                                 <Button variant="outlined" color="error" onClick={() => setShowAddContent(false)}>CLOSE</Button>
                             </div>
                         </Slide>
