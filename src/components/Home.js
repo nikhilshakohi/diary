@@ -64,7 +64,6 @@ const Home = () => {
     const [showPin, setShowPin] = useState({ main: false, alt: false, loading: false });      // Pin Toggle
     const [resettingPin, setResettingPin] = useState(false);
     const [generatedContent, setGeneratedContent] = useState('');
-    const [showPinDialog, setShowPinDialog] = useState(!pin);
     const PIN_KEY = process.env.REACT_APP_PIN_ENCRYPTION_KEY;
     const PIN_STRING = process.env.REACT_APP_SECRET_STRING;
 
@@ -375,7 +374,7 @@ const Home = () => {
             <CssBaseline />
             <Container>
                 {/*Pin Dialog*/}
-                <Dialog open={showPinDialog} onClose={() => {setShowPinDialog(false);setEditDialog(false);}} fullWidth maxWidth='sm' >
+                <Dialog open={!pin} onClose={() => setEditDialog(false)} fullWidth maxWidth='sm' >
                     {userDetails.pinStatus === '' ? <DialogTitle>Create a new PIN!</DialogTitle> : <DialogTitle>Confirm it's you!</DialogTitle>}
                     <DialogContent>
                         {userDetails.pinStatus === '' ?
@@ -389,7 +388,7 @@ const Home = () => {
                                 Enter your PIN to load your content securely:<br />
                             </DialogContentText>
                         }
-                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "text"} autoFocus="true"
+                        <TextField margin="normal" required fullWidth id="pinInput" label="PIN" inputRef={pinMainRef} name="pinMain" autoComplete="off" value={pinInput.pinMain} error={!!pinError} helperText={pinError} onChange={updatePin} type={showPin.main ? "text" : "password"} autoFocus="true"
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -405,7 +404,7 @@ const Home = () => {
                             // <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="off" value={pinInput.pinAlt} onChange={updatePin} type="password"
                             //     inputProps={{inputMode: 'numeric', maxLength: 6}}
                             // />
-                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="new-password" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "text"}
+                            <TextField margin="normal" required fullWidth id="pinAltInput" label="Confirm PIN" name="pinAlt" autoComplete="new-password" value={pinInput.pinAlt} error={!!pinError} onChange={updatePin} type={showPin.alt ? "text" : "password"}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
@@ -427,8 +426,8 @@ const Home = () => {
                         <DialogContentText>
                             To Reset your PIN, you need to LOGOUT and LOGIN through here:
                         </DialogContentText><br/>
-                        <Button type="button" variant="contained" color="error" onClick={(e) => {e.preventDefault(); forgotPin()}}>RESET</Button>{" "}
-                        <Button type="button" variant="outlined" color="secondary" onClick={(e) => {e.preventDefault(); setResettingPin(false);}}>CANCEL</Button>
+                        <Button variant="contained" color="error" onClick={() => forgotPin()}>RESET</Button>{" "}
+                        <Button variant="outlined" color="secondary" onClick={() => setResettingPin(false)}>CANCEL</Button>
                     </DialogContent>}
                 </Dialog>
                 {/*Add Content*/}
@@ -471,13 +470,13 @@ const Home = () => {
                                     variant="contained"
                                     sx={{ mr: 1, display: 'inline-block', m: '10px' }}
                                     onClick={generateTitle}
-                                    // disabled={contentDetailsRef?.current?.value}
+                                    disabled={contentDetailsRef?.current?.value}
                                 >
                                     Generate
                                 </Button>
                                 <br />
                                 <pre>{generatedContent}</pre><br />
-                                <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }} disabled={!pin}>ADD</Button>
+                                <Button variant="contained" sx={{ mr: 1 }} onClick={(e) => { addContent(e) }}>ADD</Button>
                                 <Button variant="outlined" color="error" onClick={() => setShowAddContent(false)}>CLOSE</Button>
                             </div>
                         </Slide>
