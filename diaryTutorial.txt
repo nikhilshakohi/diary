@@ -100,6 +100,7 @@ Did not work in site (opened github status)
 In firestore.json, Changed (public:"public") to (public:"build")
 
 If any error during deployment,
+firebase firestore:indexes > firestore.indexes.json
 firebase deploy --only firestore
 
 
