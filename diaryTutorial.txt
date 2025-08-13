@@ -99,4 +99,8 @@ Did not work in site (opened github status)
 13. Found blank screen in site after deployement,
 In firestore.json, Changed (public:"public") to (public:"build")
 
+If any error during deployment,
+firebase deploy --only firestore
+
+
 Finally Work Done!
